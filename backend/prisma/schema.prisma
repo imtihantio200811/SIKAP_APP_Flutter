@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Badge {
+  MERAH
+  KUNING
+  HIJAU
+}
+
+model User {
+  id              String            @id @default(uuid()) @db.Uuid
+  nama            String            @db.VarChar(120)
+  email           String            @unique @db.VarChar(320)
+  password        String            @db.VarChar(255)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  analysisHistory AnalysisHistory[]
+  bookmarks       Bookmark[]
+
+  @@map("users")
+}
+
+model AnalysisHistory {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @map("user_id") @db.Uuid
+  inputText  String?    @map("input_text") @db.Text
+  inputUrl   String?    @map("input_url") @db.VarChar(2048)
+  badge      Badge
+  summary    String     @db.Text
+  aiAnalysis Json       @map("ai_analysis")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks  Bookmark[]
+
+  @@index([userId, createdAt])
+  @@map("analysis_history")
+}
+
+model Bookmark {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @map("user_id") @db.Uuid
+  analysisId String          @map("analysis_id") @db.Uuid
+  createdAt  DateTime        @default(now()) @map("created_at")
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis   AnalysisHistory @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, analysisId])
+  @@index([userId, createdAt])
+  @@map("bookmarks")
+}
